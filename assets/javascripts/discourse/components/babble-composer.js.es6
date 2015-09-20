@@ -1,4 +1,5 @@
 import { showSelector } from "discourse/lib/emoji/emoji-toolbar";
+import showModal from 'discourse/lib/show-modal';
 
 export default Ember.Component.extend({
   classNames: ['babble-post-composer'],
