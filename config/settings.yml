@@ -10,6 +10,7 @@ plugins:
     client: true
   babble_max_topic_size:
     default: 200
+    client: true
   babble_user_id:
     default: -2
     hidden: true
