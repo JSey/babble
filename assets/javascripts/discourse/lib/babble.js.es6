@@ -45,7 +45,8 @@ export default Ember.Object.create({
       topic.postStream = self.get('currentTopic.postStream')
     }
 
-    self.set('unreadCount', topic.highest_post_number - topic.last_read_post_number)
+    self.set('unreadCount', Math.min(topic.highest_post_number - topic.last_read_post_number, 
+                                     Discourse.SiteSettings.babble_max_topic_size))
     self.set('currentTopic', topic)
   },
 
