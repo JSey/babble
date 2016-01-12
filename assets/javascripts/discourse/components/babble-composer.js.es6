@@ -3,6 +3,7 @@ import userSearch from "discourse/lib/user-search";
 
 import showModal from 'discourse/lib/show-modal';
 
+
 export default Ember.Component.extend({
   userSearch: userSearch,
   classNames: ['babble-post-composer'],
