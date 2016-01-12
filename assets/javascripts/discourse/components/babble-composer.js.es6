@@ -1,7 +1,10 @@
 import { showSelector } from "discourse/lib/emoji/emoji-toolbar";
+import userSearch from "discourse/lib/user-search";
+
 import showModal from 'discourse/lib/show-modal';
 
 export default Ember.Component.extend({
+  userSearch: userSearch,
   classNames: ['babble-post-composer'],
 
   _init: function() {
@@ -9,8 +12,9 @@ export default Ember.Component.extend({
   }.on('init'),
 
   _didInsertElement: function() {
-    this.$('textarea').autocomplete({
-      template: this.container.lookup('template:emoji-selector-autocomplete.raw'),
+    const self = this
+    self.$('textarea').autocomplete({
+      template: self.container.lookup('template:emoji-selector-autocomplete.raw'),
       key: ":",
 
       transformComplete(v) {
@@ -28,6 +32,22 @@ export default Ember.Component.extend({
         }).then(list => list.map(code => {
           return {code, src: Discourse.Emoji.urlFor(code)};
         }))
+      }
+    })
+
+    self.$('textarea').autocomplete({
+      template: self.container.lookup('template:user-selector-autocomplete.raw'),
+      key: '@',
+      dataSource(term) {
+        return self.userSearch({
+          term: term,
+          topicId: self.get('topic.id'),
+          includeGroups: true,
+          exclude: [Discourse.User.current().get('username')]
+        })
+      },
+      transformComplete(v) {
+        return v.username || v.name
       }
     })
   }.on('didInsertElement'),
