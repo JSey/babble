@@ -1,6 +1,6 @@
 # name: babble
 # about: Shoutbox plugin for Discourse
-# version: 0.9.6
+# version: 0.10.1
 # authors: James Kiesel (gdpelican)
 # url: https://github.com/gdpelican/babble
 
@@ -83,7 +83,7 @@ after_initialize do
 
     def read
       perform_fetch do
-        TopicUser.update_last_read(current_user, topic.id, params[:post_number].to_i, PostTiming::MAX_READ_TIME_PER_BATCH)
+        topic_user.update(last_read_post_number: params[:post_number]) if topic_user.last_read_post_number.to_i < params[:post_number].to_i
         respond_with topic_view, serializer: Babble::TopicViewSerializer
       end
     end
@@ -160,6 +160,10 @@ after_initialize do
       Babble::PostCreator.create(current_user, post_creator_params)
     end
 
+    def topic_user
+      @topic_user ||= TopicUser.find_or_initialize_by(user: current_user, topic: topic)
+    end
+
     def topic_view
       opts = { post_number: topic.highest_post_number } if topic.highest_post_number > 0
       @topic_view ||= TopicView.new(topic.id, current_user, opts || {})
@@ -221,7 +225,7 @@ after_initialize do
     private
 
     def serialized_topic
-      Babble::TopicViewSerializer.new(TopicView.new(@topic.id), scope: Guardian.new(@user), root: false).as_json
+      Babble::TopicViewSerializer.new(TopicView.new(@topic.id, @user), scope: Guardian.new(@user), root: false).as_json
     end
 
     def serialized_post
@@ -305,7 +309,7 @@ after_initialize do
     end
 
     def self.available_topics_for(user)
-      available_topics.select { |topic| user.admin || topic.allowed_group_users.include?(user) }
+      available_topics.joins(:allowed_group_users).where("? OR group_users.user_id = ?", user.admin, user.id).uniq
     end
 
     # NB: the set_default_allowed_groups block is passed for backwards compatibility,
@@ -327,6 +331,14 @@ after_initialize do
       Category.find_by(name:  SiteSetting.babble_category_name) ||
       Category.create!(name:  SiteSetting.babble_category_name,
                        user:  Babble::User.instance)
+    end
+  end
+
+  class ::Guardian
+    def can_see_topic?(topic)
+      super && (is_admin? ||
+               !Babble::Topic.available_topics.include?(topic) ||
+                Babble::Topic.available_topics_for(user).include?(topic))
     end
   end
 
