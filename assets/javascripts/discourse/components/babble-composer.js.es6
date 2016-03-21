@@ -78,6 +78,15 @@ export default Ember.Component.extend({
   actions: {
     selectEmoji: function() {
       var self = this
+      var closeMenuPanelHandler = _.find($._data($('html')[0], 'events')['click'], function(e) {
+        return e.namespace == 'close-menu-panel'
+      }) // sorry mom.
+
+      $('html').off('click.close-menu-panel')
+      $('.emoji-modal-wrapper').on('click', function() {
+        $('html').on('click.close-menu-panel', closeMenuPanelHandler.handler)
+      })
+
       var c = showModal('smileypicker')
       c.setProperties({ composerView: self })
       $('.smileypicker-box img').on('click', function() {
@@ -88,13 +97,6 @@ export default Ember.Component.extend({
         $('body, textarea').off('keydown.emoji')
         $('.babble-post-composer textarea').focus()
         return false
-      var closeMenuPanelHandler = _.find($._data($('html')[0], 'events')['click'], function(e) {
-        return e.namespace == 'close-menu-panel'
-      }) // sorry mom.
-
-      $('html').off('click.close-menu-panel')
-      $('.emoji-modal-wrapper').on('click', function() {
-        $('html').on('click.close-menu-panel', closeMenuPanelHandler.handler)
       })
 
       /*showSelector({
@@ -106,8 +108,8 @@ export default Ember.Component.extend({
           $('.babble-post-composer textarea').focus()
           $('html').on('click.close-menu-panel', closeMenuPanelHandler.handler)
           return false
-        }*/
-      })
+        }
+      })*/
     },
 
     submit: function(context) {
