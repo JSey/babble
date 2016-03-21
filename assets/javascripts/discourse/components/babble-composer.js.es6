@@ -94,8 +94,8 @@ export default Ember.Component.extend({
         self.set('text', (self.get('text') || '').trimRight() + ' :' + title + ':')
 
         $('.modal, .modal-outer-container').remove()
-        $('body, textarea').off('keydown.emoji')
         $('.babble-post-composer textarea').focus()
+        $('html').on('click.close-menu-panel', closeMenuPanelHandler.handler)
         return false
       })
 
