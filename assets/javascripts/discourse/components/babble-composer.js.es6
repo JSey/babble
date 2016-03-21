@@ -78,7 +78,7 @@ export default Ember.Component.extend({
   actions: {
     selectEmoji: function() {
       var self = this
-      var c = showModal('smileypicker')      
+      var c = showModal('smileypicker')
       c.setProperties({ composerView: self })
       $('.smileypicker-box img').on('click', function() {
         var title = $(this).attr('title')
@@ -88,7 +88,7 @@ export default Ember.Component.extend({
         $('body, textarea').off('keydown.emoji')
         $('.babble-post-composer textarea').focus()
         return false
-      /*var closeMenuPanelHandler = _.find($._data($('html')[0], 'events')['click'], function(e) {
+      var closeMenuPanelHandler = _.find($._data($('html')[0], 'events')['click'], function(e) {
         return e.namespace == 'close-menu-panel'
       }) // sorry mom.
 
@@ -97,7 +97,7 @@ export default Ember.Component.extend({
         $('html').on('click.close-menu-panel', closeMenuPanelHandler.handler)
       })
 
-      showSelector({
+      /*showSelector({
         container: this.container,
         onSelect: function(emoji) {
           self.set('text', (self.get('text') || '').trimRight() + ' :' + emoji + ':')
