@@ -105,7 +105,8 @@ export default Ember.Component.extend({
 
         $('.modal, .modal-outer-container').remove()
         $('.babble-post-composer textarea').focus()
-        $('html').on('click.close-menu-panel', closeMenuPanelHandler.handler)
+        outsideClickEvent.on()
+        escKeyEvent.on()
         return false
       })
 
