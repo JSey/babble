@@ -1,4 +1,12 @@
+import Post from 'discourse/models/post'
+import PostStream from 'discourse/models/post-stream'
+import Topic from 'discourse/models/topic'
+
 export default Ember.Object.create({
+
+  disabled: function() {
+    return _.contains(Discourse.Site.current().disabled_plugins, 'babble')
+  },
 
   setCurrentTopic: function(data) {
     const self = Discourse.Babble
@@ -10,68 +18,122 @@ export default Ember.Object.create({
       return
     }
 
-    const messageBus = Discourse.__container__.lookup('message-bus:main')
-
     var resetTopicField = function(topic, field) {
       topic[field] = data[field]
       if (!topic[field] && self.get('currentTopic')) { topic[field] = self.get('currentTopic')[field] }
     }
 
-    var humanizeGroupName = function(group) {
-      if (!group.name) { return '' }
-      return group.name.charAt(0).toUpperCase() + group.name.slice(1).replace(/_/g, ' ')
-    }
-
-    var topic = Discourse.Topic.create(data)
+    var topic = Topic.create(data)
     resetTopicField(topic, 'last_read_post_number')
     resetTopicField(topic, 'highest_post_number')
 
     if (self.get('currentTopicId') != topic.id) {
+      const messageBus = Discourse.__container__.lookup('message-bus:main')
       if (self.get('currentTopicId')) {
         messageBus.unsubscribe('/babble/topics/' + self.get('currentTopicId'))
         messageBus.unsubscribe('/babble/topics/' + self.get('currentTopicId') + '/posts')
+        messageBus.unsubscribe('/babble/topics/' + self.get('currentTopicId') + '/notifications')
       }
       self.set('currentTopicId', topic.id)
       messageBus.subscribe('/babble/topics/' + self.get('currentTopicId'), self.setCurrentTopic)
       messageBus.subscribe('/babble/topics/' + self.get('currentTopicId') + '/posts', self.handleNewPost)
+      messageBus.subscribe('/babble/topics/' + self.get('currentTopicId') + '/notifications', self.handleNotification)
 
-      var postStream = Discourse.PostStream.create(topic.post_stream)
-      postStream.posts = topic.post_stream.posts
+      var postStream = PostStream.create(topic.post_stream)
       postStream.topic = topic
+      postStream.updateFromJson(topic.post_stream)
 
       topic.postStream = postStream
-      topic.details.group_names = _.map(topic.details.allowed_groups, humanizeGroupName).join(', ')
+      topic.notifications = {}
     } else {
       topic.postStream = self.get('currentTopic.postStream')
+      topic.notifications = self.get('currentTopic.notifications')
     }
 
-    self.set('unreadCount', topic.highest_post_number - topic.last_read_post_number)
     self.set('currentTopic', topic)
   },
 
-  setAvailableTopics: function(data) {
-    Discourse.Babble.set('availableTopics', (data || {}).topics || [])
+  setAvailableTopics: function() {
+    return Discourse.ajax('/babble/topics.json').then(function(data) {
+      Discourse.Babble.set('availableTopics', (data || {}).topics || [])
+    })
   },
 
   lastPostIsMine: function() {
     return Discourse.Babble.get('latestPost.user_id') == Discourse.User.current().id
   },
 
-  handleNewPost: function(data) {
+  stagePost: function(text) {
     const self = Discourse.Babble
+    const user = Discourse.User.current()
 
     var postStream = self.get('currentTopic.postStream')
-    var post = postStream.storePost(Discourse.Post.create(data))
-    post.created_at = moment(data.created_at, 'YYYY-MM-DD HH:mm:ss Z')
-    postStream.appendPost(post)
-
+    var post = Post.create({
+      raw: text,
+      cooked: text,
+      name: user.get('name'),
+      display_username: user.get('name'),
+      username: user.get('username'),
+      user_id: user.get('id'),
+      user_title: user.get('title'),
+      avatar_template: user.get('avatar_template'),
+      user_custom_fields: user.get('custom_fields'),
+      moderator: user.get('moderator'),
+      admin: user.get('admin')
+    })
+    postStream.set('loadedAllPosts', true)
+    postStream.stagePost(post, user)
     self.set('latestPost', post)
+  },
 
-    if (self.lastPostIsMine()) {
-      self.set('unreadCount', 0)
-    } else {
-      var topic = self.get('currentTopic')
-      self.set('unreadCount', topic.highest_post_number - topic.last_read_post_number)
+  handleNewPost: function(data) {
+    const self = Discourse.Babble
+    let postStream = self.get('currentTopic.postStream')
+    if (data.user_id != Discourse.User.current().id) {
+      _.each(['can_edit', 'can_delete'], function(key) { delete data[key] })
     }
+
+    let post = Post.create(data)
+
+    if (data.is_edit || data.is_delete) {
+      postStream.storePost(post)
+      postStream.findLoadedPost(post.id).updateFromPost(post)
+      self.set('loadingEditId', null)
+      self.toggleProperty('queueRerender')
+    } else {
+      post.set('created_at', data.created_at)
+      self.set('latestPost', post)
+
+      if (self.lastPostIsMine()) {
+        self.clearStagedPost()
+        postStream.commitPost(post)
+        self.set('unreadCount', 0)
+        Discourse.Babble.set('submitDisabled', false)
+      } else {
+        postStream.appendPost(post)
+        var topic = self.get('currentTopic')
+      }
+      self.toggleProperty('postStreamUpdated')
+    }
+  },
+
+  handleNotification: function (data) {
+    const notifications = Discourse.Babble.get('currentTopic.notifications')
+    const username = data.user.username
+    data.user.template = data.user.avatar_template
+    if (notifications[username]) {
+      clearTimeout(notifications[username].timeout)
+    }
+    notifications[username] = data
+    data.timeout = setTimeout(function () {
+      delete notifications[username]
+    }, 30 * 1000)
+  },
+
+  clearStagedPost: function() {
+    const self = Discourse.Babble
+    var postStream = self.get('currentTopic.postStream')
+    var staged = postStream.findLoadedPost(-1)
+    if (staged) { postStream.removePosts([staged]) }
   }
 })

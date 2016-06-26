@@ -10,12 +10,9 @@ plugins:
     client: true
   babble_max_topic_size:
     default: 200
-  babble_user_id:
-    default: -2
-    hidden: true
-  babble_user_email:
-    default: khattycathy@gmail.com
-    hidden: true
-  babble_username:
-    default: chattykathy
-    hidden: true
+  babble_category_name:
+    default: chat
+  babble_remote_post:
+    default: false
+  babble_remote_url:
+    default: http://example.com/api/message/add
