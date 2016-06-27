@@ -1,6 +1,8 @@
 import { createWidget } from 'discourse/widgets/widget';
 import { h } from 'virtual-dom';
 import { showSelector } from "discourse/lib/emoji/emoji-toolbar";
+import showModal from 'discourse/lib/show-modal';
+
 
 export default createWidget('babble-composer', {
   tagName: 'div.babble-post-composer',
@@ -21,6 +23,7 @@ export default createWidget('babble-composer', {
           escKeyEvent = self.eventToggleFor('body', 'keydown', 'discourse-menu-panel');
     outsideClickEvent.off()
     escKeyEvent.off()
+    /*
     showSelector({
       container: self.container,
       onSelect: function(emoji) {
@@ -34,6 +37,26 @@ export default createWidget('babble-composer', {
         escKeyEvent.on()
         return false
       }
+    })
+    */
+    var c = showModal('smileypicker')
+    c.setProperties({ composerView: self })
+    $('.smileypicker-box img').on('click', function() {
+      var title = $(this).attr('title')
+
+      var $composer = $('.babble-post-composer textarea'),
+          text = $composer.val();
+      text = text.trimRight() + ' :' + title + ':'
+      $composer.val(text)
+      $('.emoji-modal, .emoji-modal-wrapper').remove()
+      $composer.focus()
+      outsideClickEvent.on()
+      escKeyEvent.on()
+      
+      $('.modal, .modal-outer-container').remove()
+      $('body, textarea').off('keydown.emoji')
+      $('.babble-post-composer textarea').focus()
+      return false
     })
 
     $('.emoji-modal-wrapper').on('click', function(event) {

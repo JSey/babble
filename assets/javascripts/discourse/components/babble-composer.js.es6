@@ -238,20 +238,29 @@ export default Ember.Component.extend({
       const outsideClickEvent = self._eventToggleFor('html', 'click', 'close-menu-panel')
       const escKeyEvent       = self._eventToggleFor('body', 'keydown', 'discourse-menu-panel')
 
+      outsideClickEvent.off()
+      escKeyEvent.off()
+
       var c = showModal('smileypicker')
       c.setProperties({ composerView: self })
       $('.smileypicker-box img').on('click', function() {
         var title = $(this).attr('title')
-        self.set('text', (self.get('text') || '').trimRight() + ' :' + title + ':')
+
+        var $composer = $('.babble-post-composer textarea'),
+            text = $composer.val();
+        text = text.trimRight() + ' :' + title + ':'
+        $composer.val(text)
+        $('.emoji-modal, .emoji-modal-wrapper').remove()
+        $composer.focus()
+        outsideClickEvent.on()
+        escKeyEvent.on()
 
         $('.modal, .modal-outer-container').remove()
         $('body, textarea').off('keydown.emoji')
         $('.babble-post-composer textarea').focus()
         return false
-
-      outsideClickEvent.off()
-      escKeyEvent.off()
-
+      })
+      /*
       showSelector({
         container: this.container,
         onSelect: function(emoji) {
@@ -264,6 +273,7 @@ export default Ember.Component.extend({
           return false
         }
       })
+      */
 
       $('.emoji-modal-wrapper').on('click', function(event) {
         outsideClickEvent.on()
