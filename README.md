@@ -1,5 +1,7 @@
 A Shoutbox style plugin for [Discourse](http://discourse.org).
 
+**Warning**: this fork contains minor customizations for my own Discourse instance running at https://www.macmini-forum.de. They also rely on other, private plugins. So please be warned that this fork is not for you. Thank you!
+
 [![Code Climate](https://codeclimate.com/github/gdpelican/babble/badges/gpa.svg)](https://codeclimate.com/github/gdpelican/babble)
 [![Gitter](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/gdpelican/babble)
 
