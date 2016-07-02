@@ -39,8 +39,8 @@ export default createWidget('babble-composer', {
       }
     })
     */
-    var c = showModal('smileypicker')
-    c.setProperties({ composerView: self })
+    var c = showModal('smileypicker').setProperties({composerView: null});
+    //c.setProperties({ composerView: self })
     $('.smileypicker-box img').on('click', function() {
       var title = $(this).attr('title')
 
@@ -48,7 +48,7 @@ export default createWidget('babble-composer', {
           text = $composer.val();
       text = text.trimRight() + ' :' + title + ':'
       $composer.val(text)
-      $('.emoji-modal, .emoji-modal-wrapper').remove()
+      //$('.emoji-modal, .emoji-modal-wrapper').remove()
       $composer.focus()
       outsideClickEvent.on()
       escKeyEvent.on()
