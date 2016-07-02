@@ -40,11 +40,11 @@ export default createWidget('babble-composer', {
     })
     */
     var c = showModal('smileypicker')
-    c.setProperties({ composerView: self }).setProperties({composerView: null});
+    c.setProperties({ composerView: null })
     $('.smileypicker-box img').on('click', function() {
        var title = $(this).attr('title')
 
-       // mmf    
+       // mmf
        var $composer = $('.babble-post-composer textarea'),
            text = $composer.val();
        text = text.trimRight() + ' :' + title + ':'
