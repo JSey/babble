@@ -2,7 +2,6 @@ import { withPluginApi } from 'discourse/lib/plugin-api';
 import Babble from "../lib/babble";
 import SiteHeader from 'discourse/components/site-header';
 import autosize from 'discourse/lib/autosize';
-import { default as computed, on, observes } from 'ember-addons/ember-computed-decorators';
 
 export default {
   name: 'babble-init',
@@ -22,15 +21,6 @@ export default {
     )
 
     SiteHeader.reopen({
-      @observes('Babble.currentTopic')
-      _babbleRenderPosts() {
-        // const topic = Babble.currentTopic
-        // if (topic) {this.container.lookup('topic-tracking-state:main').updateSeen(topic.id, topic.highest_post_number)}
-        // this.scheduleRerender()
-        // Ember.run.scheduleOnce('afterRender', () => {
-        //   this.$('.babble-list').scrollTop($('.babble-posts').height())
-        // })
-      },
 
       didInsertElement() {
         this._super();
@@ -39,21 +29,14 @@ export default {
 
       afterPatch() {
         Ember.run.scheduleOnce('afterRender', () => {
-          const $textarea = this.$('.babble-post-container .babble-post-composer textarea')
-          if ($textarea.length) {
-            if (!$textarea.val()) {
-              const editingId = Babble.editingPostId
-              if (editingId) {
-                var post = Babble.currentTopic.postStream.findLoadedPost(editingId)
-                $textarea.val(post.raw)
-                autosize($textarea)
-              } else {
-                $textarea.css('height', 'initial')
-              }
-            } else {
-              autosize($textarea)
-            }
-          }
+          const $scrollContainer = this.$('.babble-list[scroll-container=inactive]')
+          Babble.prepareScrollContainer($scrollContainer)
+
+          const $textarea = this.$('.babble-post-composer textarea[babble-composer=inactive]')
+          Babble.prepareComposer($textarea)
+
+          const $editing = this.$('.babble-post-composer textarea[babble-composer=active]')
+          autosize($editing)
         })
       }
     })
@@ -74,11 +57,11 @@ export default {
             active:        headerState.babbleVisible,
             action:        'toggleBabble',
             contents() {
-              if (!Babble.unreadCount) { return }
+              if (!Babble.notificationCount() || headerState.babbleVisible) { return }
               return this.attach('link', {
                 action:    'toggleBabble',
                 className: 'badge-notification unread-notifications',
-                rawLabel:  Babble.unreadCount
+                rawLabel:  Babble.notificationCount()
               })
             }
           }));
@@ -87,12 +70,24 @@ export default {
           if (headerState.babbleViewingChat === undefined) {
             headerState.babbleViewingChat = true
           }
-          contents.push(helper.attach('babble-menu', {viewingChat: headerState.babbleViewingChat}))
+          contents.push(helper.attach('babble-menu', {
+            viewingChat:        headerState.babbleViewingChat,
+            lastReadPostNumber: headerState.lastReadPostNumber
+          }))
         }
         return contents
       })
 
       api.attachWidgetAction('header', 'toggleBabble', function() {
+        let topic = Babble.currentTopic
+        if (topic.last_read_post_number < topic.highest_post_number) {
+          this.state.lastReadPostNumber = topic.last_read_post_number
+        } else {
+          this.state.lastReadPostNumber = null
+        }
+
+        Babble.editPost(null)
+
         this.state.babbleVisible = !this.state.babbleVisible
       })
 

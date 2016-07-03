@@ -9,32 +9,40 @@ export default createWidget('babble-composer', {
 
   defaultState(attrs) {
     return {
-      editing: attrs.isEditing,
-      submitDisabled: attrs.submitDisabled,
-      post: attrs.post,
-      topic: attrs.topic,
+      editing:         attrs.isEditing,
+      submitDisabled:  attrs.submitDisabled,
+      post:            attrs.post,
+      topic:           attrs.topic,
+      raw:             attrs.raw,
       lastInteraction: new Date(0)
     }
   },
 
+  composerElement() {
+    if (this.state.editing) {
+      return $('.babble-post-container > .babble-post-composer textarea')
+    } else {
+      return $('.babble-chat > .babble-post-composer textarea')
+    }
+  },
+
   selectEmoji() {
+<<<<<<< HEAD
     const self = this,
           outsideClickEvent = self.eventToggleFor('html', 'click', 'close-menu-panel'),
           escKeyEvent = self.eventToggleFor('body', 'keydown', 'discourse-menu-panel');
     outsideClickEvent.off()
     escKeyEvent.off()
     /* mmf
+=======
+    let $composer = this.composerElement()
+>>>>>>> gdpelican/beta
     showSelector({
-      container: self.container,
+      container: this.container,
       onSelect: function(emoji) {
-        var $composer = $('.babble-post-composer textarea'),
-            text = $composer.val();
-        text = text.trimRight() + ' :' + emoji + ':'
-        $composer.val(text)
-        $('.emoji-modal, .emoji-modal-wrapper').remove()
+        $composer.val(`${$composer.val().trimRight()} :${emoji}:`)
         $composer.focus()
-        outsideClickEvent.on()
-        escKeyEvent.on()
+        $('.emoji-modal, .emoji-modal-wrapper').remove()
         return false
       }
     })
@@ -44,6 +52,7 @@ export default createWidget('babble-composer', {
     $('.smileypicker-box img').on('click', function() {
        var title = $(this).attr('title')
 
+<<<<<<< HEAD
        // mmf
        var $composer = $('.babble-post-composer textarea'),
            text = $composer.val();
@@ -71,27 +80,18 @@ export default createWidget('babble-composer', {
       escKeyEvent.on()
       event.stopPropagation()
     })
+=======
+    $('.emoji-modal-wrapper').on('click', (e) => { e.stopPropagation() })
+    $('body').on('keydown.emoji',         (e) => { e.stopPropagation() })
+>>>>>>> gdpelican/beta
   },
 
   cancel() {
-    Babble.set('editingPostId', null)
-  },
-
-  eventToggleFor(selector, event, namespace) {
-    let elem = $(selector)
-    let handler = _.find($._data(elem[0], 'events')[event], function(e) {
-      return e.namespace == namespace
-    })
-    return {
-      element: elem,
-      handler: handler,
-      on: function() { elem.on(`${event}.${namespace}`, handler)},
-      off: function() { elem.off(`${event}.${namespace}`) }
-    }
+    Babble.editPost(null)
   },
 
   submit() {
-    var $composer = $('.babble-post-composer textarea'),
+    let $composer = this.composerElement(),
         text = $composer.val();
     $composer.val('')
     if (!text) { return; }
@@ -119,7 +119,8 @@ export default createWidget('babble-composer', {
 
   update(text) {
     var post = this.state.post
-    Babble.set('editingPostId', null)
+    Babble.editPost(null)
+    if (post.raw.trim() === text.trim()) { return }
     Babble.set('loadingEditId', post.id)
     this.state.submitDisabled = true
     Discourse.ajax(`/babble/topics/${post.topic_id}/post/${post.id}`, {
@@ -136,11 +137,13 @@ export default createWidget('babble-composer', {
   keyUp(event) {
     this.state.showError = false
     this.checkInteraction()
-    if (event.keyCode == 38 && !this.state.editing) {
+    if (event.keyCode == 38 &&                               // key pressed is up key
+        !this.state.editing &&                               // post is not being edited
+        !$(event.target).siblings('.autocomplete').length) { // autocomplete is not active
       let myLastPost = _.last(_.select(this.state.topic.postStream.posts, function(post) {
         return post.user_id == Discourse.User.current().id
       }))
-      if (myLastPost) { Babble.set('editingPostId', myLastPost.id) }
+      if (myLastPost) { Babble.editPost(myLastPost) }
       return false
     }
 
@@ -163,19 +166,6 @@ export default createWidget('babble-composer', {
         type: 'POST',
         data: {state: 'editing'}
       })
-    }
-  },
-
-  eventToggleFor(selector, event, namespace) {
-    let elem = $(selector)
-    let handler = _.find($._data(elem[0], 'events')[event], function(e) {
-      return e.namespace == namespace
-    })
-    return {
-      element: elem,
-      handler: handler,
-      on: function() {  elem.on(`${event}.${namespace}`, handler) },
-      off: function() { elem.off(`${event}.${namespace}`) }
     }
   },
 
