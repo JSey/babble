@@ -27,16 +27,8 @@ export default createWidget('babble-composer', {
   },
 
   selectEmoji() {
-<<<<<<< HEAD
-    const self = this,
-          outsideClickEvent = self.eventToggleFor('html', 'click', 'close-menu-panel'),
-          escKeyEvent = self.eventToggleFor('body', 'keydown', 'discourse-menu-panel');
-    outsideClickEvent.off()
-    escKeyEvent.off()
-    /* mmf
-=======
     let $composer = this.composerElement()
->>>>>>> gdpelican/beta
+    /* mmf
     showSelector({
       container: this.container,
       onSelect: function(emoji) {
@@ -52,16 +44,12 @@ export default createWidget('babble-composer', {
     $('.smileypicker-box img').on('click', function() {
        var title = $(this).attr('title')
 
-<<<<<<< HEAD
        // mmf
-       var $composer = $('.babble-post-composer textarea'),
-           text = $composer.val();
+       var text = $composer.val();
        text = text.trimRight() + ' :' + title + ':'
        $composer.val(text)
        $('.emoji-modal, .emoji-modal-wrapper').remove()
        $composer.focus()
-       outsideClickEvent.on()
-       escKeyEvent.on()
 
        $('.modal, .modal-outer-container').remove()
        $('body, textarea').off('keydown.emoji')
@@ -69,21 +57,9 @@ export default createWidget('babble-composer', {
        return false
      })
 
-     $('.emoji-modal-wrapper').on('click', function(event) {
-      outsideClickEvent.on()
-      escKeyEvent.on()
-      event.stopPropagation()
-    })
-    $('body').on('keydown.emoji', function(event) {
-      if (event.which != 27) { return; }
-      outsideClickEvent.on()
-      escKeyEvent.on()
-      event.stopPropagation()
-    })
-=======
     $('.emoji-modal-wrapper').on('click', (e) => { e.stopPropagation() })
     $('body').on('keydown.emoji',         (e) => { e.stopPropagation() })
->>>>>>> gdpelican/beta
+
   },
 
   cancel() {
